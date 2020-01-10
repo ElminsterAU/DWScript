@@ -1085,6 +1085,23 @@ type
          function IsPointerType : Boolean; override;
    end;
 
+   // type x = ^TMyType;
+   TPointerSymbol = class sealed (TTypeSymbol)
+      protected
+         function DoIsOfType(typSym : TTypeSymbol) : Boolean; override;
+         function GetAsFuncSymbol : TFuncSymbol; override;
+         function GetDescription : String; override;
+
+      public
+         function BaseType : TTypeSymbol; override;
+         function UnAliasedType : TTypeSymbol; override;
+         procedure InitData(const data : TData; offset : Integer); override;
+         procedure InitVariant(var v : Variant); override;
+         function IsCompatible(typSym : TTypeSymbol) : Boolean; override;
+         function IsPointerType : Boolean; override;
+   end;
+
+
    // integer/String/float/boolean/variant
    TBaseSymbol = class(TTypeSymbol)
       public
@@ -8108,6 +8125,80 @@ end;
 function TAliasSymbol.GetDescription : String;
 begin
    Result := Name + ' = ' + Typ.Name;
+end;
+
+// ------------------
+// ------------------ TPointerSymbol ------------------
+// ------------------
+
+// BaseType
+//
+function TPointerSymbol.BaseType : TTypeSymbol;
+begin
+   Assert(False, 'not correctly implemented');
+   Result:=Typ.BaseType;
+end;
+
+// UnAliasedType
+//
+function TPointerSymbol.UnAliasedType : TTypeSymbol;
+begin
+   Assert(False, 'not correctly implemented');
+   Result:=Typ.UnAliasedType;
+end;
+
+// InitData
+//
+procedure TPointerSymbol.InitData(const data : TData; offset : Integer);
+begin
+   Assert(False, 'not correctly implemented');
+   Typ.InitData(Data, Offset);
+end;
+
+// InitVariant
+//
+procedure TPointerSymbol.InitVariant(var v : Variant);
+begin
+   Assert(False, 'not correctly implemented');
+   Typ.InitVariant(v);
+end;
+
+// IsCompatible
+//
+function TPointerSymbol.IsCompatible(typSym : TTypeSymbol) : Boolean;
+begin
+   Assert(False, 'not correctly implemented');
+   Result:=Typ.IsCompatible(typSym);
+end;
+
+// IsPointerType
+//
+function TPointerSymbol.IsPointerType : Boolean;
+begin
+   Result:=True;
+end;
+
+// DoIsOfType
+//
+function TPointerSymbol.DoIsOfType(typSym : TTypeSymbol) : Boolean;
+begin
+   Assert(False, 'not correctly implemented');
+   Result:=Typ.DoIsOfType(typSym);
+end;
+
+// GetAsFuncSymbol
+//
+function TPointerSymbol.GetAsFuncSymbol : TFuncSymbol;
+begin
+   Assert(False, 'not correctly implemented');
+   Result:=Typ.GetAsFuncSymbol;
+end;
+
+// GetDescription
+//
+function TPointerSymbol.GetDescription : String;
+begin
+   Result := Name + ' = ^' + Typ.Name;
 end;
 
 // ------------------

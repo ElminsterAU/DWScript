@@ -75,6 +75,15 @@ type
          function ExposeRTTIEnumeration(enum : TRttiEnumerationType;
                                         const options : TdwsRTTIExposerOptions) : TdwsEnumeration;
 
+         function ExposeRTTISet(aSet : TRttiSetType;
+                                const options : TdwsRTTIExposerOptions) : TdwsSet;
+
+         function ExposeRTTIPointer(aPointer : TRttiPointerType;
+                                const options : TdwsRTTIExposerOptions) : TdwsPointer;
+
+         function ExposeRTTIString(aString : TRttiStringType;
+                                const options : TdwsRTTIExposerOptions) : TdwsSynonym;
+
          function ExposeRTTIRecord(rec : TRttiRecordType;
                                    const options : TdwsRTTIExposerOptions) : TdwsRecord;
 
@@ -203,7 +212,7 @@ const
     'Unknown', 'Integer', 'Char', 'Enumeration', 'Float',
     'String', 'Set', 'Class', 'Method', 'WChar', 'LString', 'WString',
     'Variant', 'Array', 'Record', 'Interface', 'Int64', 'DynArray', 'UString',
-    'ClassRef', 'Pointer', 'Procedure');
+    'ClassRef', 'Pointer', 'Procedure', 'MRecord');
 
 // ------------------
 // ------------------ dwsPublished ------------------
@@ -299,13 +308,20 @@ begin
       Result:=ExposeRTTIClass(TRttiInstanceType(typ), options)
    else if typ is TRttiEnumerationType then
       Result:=ExposeRTTIEnumeration(TRttiEnumerationType(typ), options)
+   else if typ is TRttiSetType then
+      Result:=ExposeRTTISet(TRttiSetType(typ), options)
+   else if typ is TRttiPointerType then
+      Result:=ExposeRTTIPointer(TRttiPointerType(typ), options)
+   else if typ is TRttiStringType then
+      Result:=ExposeRTTIString(TRttiStringType(typ), options)
    else if typ is TRttiRecordType then
       Result:=ExposeRTTIRecord(TRttiRecordType(typ), options)
    else if typ is TRttiInterfaceType then
       Result:=ExposeRTTIInterface(TRttiInterfaceType(typ), options)
    else if typ is TRttiDynamicArrayType then
       Result := ExposeRTTIDynamicArray(TRttiDynamicArrayType(typ), options)
-   else raise Exception.CreateFmt('Expose unsupported for %s', [typ.ClassName]);
+   else
+//     raise Exception.CreateFmt('Expose unsupported for %s', [typ.ClassName]);
 end;
 
 // RTTITypeToScriptType
@@ -347,6 +363,8 @@ begin
                 LDynType := SYS_FLOAT;
               tkVariant:
                 LDynType := SYS_VARIANT;
+              tkRecord :
+                LDynType:=dwsPublished.NameOf(aType);
               else
                 raise Exception.Create(
                   'Cannot handle this dynamic array RTTI type, maybe you haven''t exposed type"' + atype.name + '" yet?');
@@ -589,6 +607,37 @@ begin
       element.Name:=enumName;
       element.UserDefValue:=i;
    end;
+end;
+
+// ExposeRTTISet
+//
+function TdwsRTTIExposer.ExposeRTTISet(aSet : TRttiSetType;
+                                               const options : TdwsRTTIExposerOptions) : TdwsSet;
+begin
+   Result:=Sets.Add;
+   Result.Name:=dwsPublished.NameOf(aSet);
+   Result.BaseType:=dwsPublished.NameOf(aSet.ElementType);
+end;
+
+// ExposeRTTIPointer
+//
+function TdwsRTTIExposer.ExposeRTTIPointer(aPointer : TRttiPointerType;
+                                               const options : TdwsRTTIExposerOptions) : TdwsPointer;
+begin
+   Result:=Pointers.Add;
+   Result.Name:=dwsPublished.NameOf(aPointer);
+   if Assigned(aPointer.ReferredType) then
+     Result.DataType:=dwsPublished.NameOf(aPointer.ReferredType);
+end;
+
+// ExposeRTTIString
+//
+function TdwsRTTIExposer.ExposeRTTIString(aString : TRttiStringType;
+                                               const options : TdwsRTTIExposerOptions) : TdwsSynonym;
+begin
+   Result:=Synonyms.Add;
+   Result.Name:=dwsPublished.NameOf(aString);
+   Result.DataType := Copy(GetEnumName(TypeInfo(TRttiStringKind), Ord(aString.StringKind)), 3, High(Integer));
 end;
 
 // ExposeRTTIRecord

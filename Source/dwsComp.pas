@@ -1248,6 +1248,23 @@ type
 
    TdwsSynonymsClass = class of TdwsSynonyms;
 
+   TdwsPointer = class(TdwsVariable)
+      public
+         function DoGenerate(systemTable : TSystemSymbolTable; Table: TSymbolTable;
+                             ParentSym: TSymbol = nil): TSymbol; override;
+   end;
+
+   TdwsPointers = class(TdwsCollection)
+      protected
+         class function GetSymbolClass : TdwsSymbolClass; override;
+      public
+         function Add : TdwsPointer;
+   end;
+
+   TdwsPointersClass = class of TdwsPointers;
+
+
+
    TdwsParseName = (pnAtDesignTimeOnly, pnAlways, pnNever);
 
    // TdwsUnit
@@ -1259,6 +1276,7 @@ type
         FConstants: TdwsConstants;
         FEnumerations: TdwsEnumerations;
         FSets: TdwsSets;
+        FPointers: TdwsPointers;
         FForwards: TdwsForwards;
         FFunctions: TdwsFunctions;
         FDelegates: TdwsDelegates;
@@ -1274,13 +1292,14 @@ type
         FDependencies : TStrings;
 
       protected
-        FCollections : array[0..13] of TdwsCollection;
+        FCollections : array[0..14] of TdwsCollection;
 
         class function GetArraysClass : TdwsArraysClass; virtual;
         class function GetClassesClass : TdwsClassesClass; virtual;
         class function GetConstantsClass : TdwsConstantsClass; virtual;
         class function GetEnumerationsClass : TdwsEnumerationsClass; virtual;
         class function GetSetsClass : TdwsSetsClass; virtual;
+        class function GetPointersClass : TdwsPointersClass; virtual;
         class function GetForwardsClass : TdwsForwardsClass; virtual;
         class function GetFunctionsClass : TdwsFunctionsClass; virtual;
         class function GetDelegatesClass : TdwsDelegatesClass; virtual;
@@ -1296,6 +1315,7 @@ type
         procedure SetConstants(const Value: TdwsConstants);
         procedure SetEnumerations(const Value: TdwsEnumerations);
         procedure SetSets(const Value: TdwsSets);
+        procedure SetPointers(const Value: TdwsPointers);
         procedure SetForwards(const Value: TdwsForwards);
         procedure SetFunctions(const Value: TdwsFunctions);
         procedure SetDelegates(const Value: TdwsDelegates);
@@ -1311,6 +1331,7 @@ type
         function StoreConstants : Boolean;
         function StoreEnumerations : Boolean;
         function StoreSets : Boolean;
+        function StorePointers : Boolean;
         function StoreForwards : Boolean;
         function StoreFunctions : Boolean;
         function StoreDelegates : Boolean;
@@ -1361,6 +1382,7 @@ type
         property Dependencies: TStrings read FDependencies write SetDependencies;
         property Enumerations: TdwsEnumerations read FEnumerations write SetEnumerations stored StoreEnumerations;
         property Sets: TdwsSets read FSets write SetSets stored StoreSets;
+        property Pointers: TdwsPointers read FPointers write SetPointers stored StorePointers;
         property Forwards: TdwsForwards read FForwards write SetForwards stored StoreForwards;
         property Functions: TdwsFunctions read FFunctions write SetFunctions stored StoreFunctions;
         property Delegates: TdwsDelegates read FDelegates write SetDelegates stored StoreDelegates;
@@ -1970,6 +1992,7 @@ begin
    FConstants := GetConstantsClass.Create(Self);
    FEnumerations := GetEnumerationsClass.Create(Self);
    FSets := GetSetsClass.Create(Self);
+   FPointers := GetPointersClass.Create(Self);
    FForwards := GetForwardsClass.Create(Self);
    FFunctions := GetFunctionsClass.Create(Self);
    FDelegates := GetDelegatesClass.Create(Self);
@@ -1996,6 +2019,7 @@ begin
    FCollections[11] := FOperators;
    FCollections[12] := FSets;
    FCollections[13] := FDelegates;
+   FCollections[14] := FPointers;
 
    FParseName := pnAtDesignTimeOnly;
 end;
@@ -2122,8 +2146,8 @@ begin
       List.Add(coll.Items[y].Name);
   end;
 
-  // ...and sets and delegates
-  for x := 12 to 13 do
+  // ...and sets and delegates, and pointers
+  for x := 12 to 14 do
   begin
     coll := FCollections[x];
     for y := 0 to coll.Count - 1 do
@@ -2235,6 +2259,11 @@ begin
   FSets.Assign(Value);
 end;
 
+procedure TdwsUnit.SetPointers(const Value: TdwsPointers);
+begin
+  FPointers.Assign(Value);
+end;
+
 procedure TdwsUnit.SetInstances(const Value: TdwsInstances);
 begin
   FInstances.Assign(Value);
@@ -2268,6 +2297,11 @@ end;
 class function TdwsUnit.GetSetsClass: TdwsSetsClass;
 begin
   Result := TdwsSets;
+end;
+
+class function TdwsUnit.GetPointersClass: TdwsPointersClass;
+begin
+  Result := TdwsPointers;
 end;
 
 class function TdwsUnit.GetForwardsClass: TdwsForwardsClass;
@@ -2359,6 +2393,13 @@ end;
 function TdwsUnit.StoreSets : Boolean;
 begin
    Result:=FSets.Count>0;
+end;
+
+// StorePointers
+//
+function TdwsUnit.StorePointers : Boolean;
+begin
+   Result:=FPointers.Count>0;
 end;
 
 // StoreForwards
@@ -6090,6 +6131,31 @@ begin
   Result := TAliasSymbol.Create(Name, GetDataType(systemTable, Table, DataType));
   GetUnit.Table.AddSymbol(Result);
 end;
+
+{ TdwsPointers }
+
+class function TdwsPointers.GetSymbolClass: TdwsSymbolClass;
+begin
+  Result := TdwsPointer;
+end;
+
+// Add
+//
+function TdwsPointers.Add : TdwsPointer;
+begin
+   Result := TdwsPointer(inherited Add);
+end;
+
+{ TdwsPointer }
+
+function TdwsPointer.DoGenerate(systemTable : TSystemSymbolTable; Table: TSymbolTable; ParentSym: TSymbol): TSymbol;
+begin
+  FIsGenerating := True;
+  CheckName(Table, Name);
+  Result := TPointerSymbol.Create(Name, GetDataType(systemTable, Table, DataType));
+  GetUnit.Table.AddSymbol(Result);
+end;
+
 
 { TdwsAbstractStaticUnit }
 
